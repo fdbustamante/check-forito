@@ -69,7 +69,8 @@ def fetch_data():
             node_controls = container.find(class_=NODE_CONTROLS_CLASS)
 
             if post_row_content and node_controls:
-                #reply_to = post_row_content.find(class_=BBCODE_CONTAINER_CLASS)
+                bbcode_containers = post_row_content.find_all(class_=BBCODE_CONTAINER_CLASS)
+                body_reply_to = "\n\n".join(bbcode.get_text('\n\n',strip=True) for bbcode in bbcode_containers)
 
                 # Eliminar bbcode_container
                 for bbcode in post_row_content.find_all(class_=BBCODE_CONTAINER_CLASS):
@@ -86,9 +87,8 @@ def fetch_data():
                 for a_tag in post_row_content.find_all('a'):
                     a_tag.decompose()
 
-                body = post_row_content.get_text('\n',strip=True)
+                body = post_row_content.get_text('\n\n',strip=True)
                 body_id = node_controls.get_text(strip=True).replace("#", "")
-                body_reply_to = ""
 
                 if body_id:  # Check if 'id' is not None
                     last_id = get_last_id()
