@@ -33,3 +33,12 @@ jobs:
     - name: Run script
       run: |
         python main.py  # Reemplaza 'script.py' con el nombre de tu script
+    - name: Commit changes
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add last_id.txt
+        git commit -m "Update last_id.txt with new value"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
