@@ -9,7 +9,7 @@ on:
     branches:
       - master
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/3 * * * *'
 
 # Define the sequence of jobs to run in this workflow
 jobs:
