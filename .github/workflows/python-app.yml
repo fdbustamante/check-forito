@@ -1,4 +1,4 @@
-name: Run Python script
+name: Run Python script capo
 
 # Trigger this workflow on push or pull request to the main branch
 on:
