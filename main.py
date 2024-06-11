@@ -16,7 +16,7 @@ NODE_CONTROLS_LINK_CLASS = 'postcounter'
 LAST_ID_FILE = 'last_id.txt'
 BODY_ID_FILE = 'body_and_id.txt'
 TELEGRAM_API_URL = 'https://api.telegram.org/bot7269598452:AAGMURWCaSd5nhDzFhEKPKl4wlY70dFEbEw/sendMessage'
-CHAT_ID = '7269598452'
+CHAT_ID = '387808312'
 
 def get_last_id():
     try:
