@@ -41,8 +41,12 @@ jobs:
       run: |
         git config --global user.name 'fdbustamante'
         git config --global user.email 'federicobustamante@gmail.com'
-        git add last_id.txt
-        git commit -m "Update last_id.txt with new value"
-        git push
+        if [ -n "$(git status --porcelain)" ]; then
+          git add last_id.txt
+          git commit -m "Update last_id.txt with new value"
+          git push
+        else
+          echo "No changes to commit"
+        fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
