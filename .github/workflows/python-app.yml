@@ -4,10 +4,10 @@ name: Run Python script
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
   schedule:
     - cron: '*/5 * * * *'  # Corre a las 00:00 UTC cada día
 
