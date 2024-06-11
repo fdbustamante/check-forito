@@ -37,16 +37,16 @@ def save_last_id(id):
     with open(LAST_ID_FILE, 'w') as file:
         file.write(id)
 
-def send_telegram_message(chat_id, text):
+def send_telegram_message(chat_id, text, parse_mode='Markdown'):
     try:
-        response = requests.post(TELEGRAM_API_URL, data={'chat_id': chat_id, 'text': text})
+        response = requests.post(TELEGRAM_API_URL, data={'chat_id': chat_id, 'text': text, 'parse_mode': parse_mode})
         response.raise_for_status()
         logging.info('Mensaje enviado a Telegram')
     except requests.exceptions.RequestException as e:
         logging.error(f'Error al enviar mensaje a Telegram: {e}')
 
 def save_body_and_id(body, id, hrefs):
-    message = "<code>ID: " + id + "</code>\n\n" + body + "\n\n"
+    message = "*ID: " + id + "*\n\n" + body + "\n\n"
     if hrefs:
         message += "Links:\n" + "\n\n".join(hrefs)
     # with open(BODY_ID_FILE, 'a') as file:
