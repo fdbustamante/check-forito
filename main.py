@@ -19,6 +19,7 @@ URL_BASE = "https://foros.3dgames.com.ar/"
 URL = 'https://foros.3dgames.com.ar/threads/942062-ofertas-online-argentina/page544200000'
 POST_CONTAINER_CLASS = 'postcontainer'
 POST_ROW_CLASS = 'postrow'
+POST_ROW_CLASS_CONTENT = 'content'
 NODE_CONTROLS_CLASS = 'nodecontrols'
 BBCODE_CONTAINER_CLASS = 'bbcode_container'
 NODE_CONTROLS_LINK_CLASS = 'postcounter'
@@ -45,8 +46,8 @@ def send_telegram_message(chat_id, text, parse_mode='Markdown'):
     except requests.exceptions.RequestException as e:
         logging.error(f'Error al enviar mensaje a Telegram: {e}')
 
-def save_body_and_id(body, id, hrefs):
-    message = "_ID: " + id + "_\n\n`" + body + "`\n\n"
+def save_body_and_id(body, id, hrefs, reply_to):
+    message = "_ID: " + id + "_\n\n`" + reply_to + "`\n\n\n" + body + "\n\n"
     if hrefs:
         message += "Links:\n" + "\n\n".join(hrefs)
     # with open(BODY_ID_FILE, 'a') as file:
@@ -64,14 +65,17 @@ def fetch_data():
 
         for container in post_containers:
             post_row = container.find(class_=POST_ROW_CLASS)
+            post_row_content = post_row.find(class_=POST_ROW_CLASS_CONTENT)
             node_controls = container.find(class_=NODE_CONTROLS_CLASS)
 
-            if post_row and node_controls:
+            if post_row_content and node_controls:
+                reply_to = post_row_content.find(class_=BBCODE_CONTAINER_CLASS)
+
                 # Eliminar bbcode_container
-                for bbcode in post_row.find_all(class_=BBCODE_CONTAINER_CLASS):
+                for bbcode in post_row_content.find_all(class_=BBCODE_CONTAINER_CLASS):
                     bbcode.decompose()
 
-                links = post_row.find_all('a')
+                links = post_row_content.find_all('a')
                 hrefs = [link.get('href') for link in links]
 
                 # Obtener todos los hrefs dentro de node_controls
@@ -79,18 +83,19 @@ def fetch_data():
                 hrefs.extend(urljoin(URL_BASE, link.get('href')) for link in node_links)
 
                 # Eliminar todos los tags <a>
-                for a_tag in post_row.find_all('a'):
+                for a_tag in post_row_content.find_all('a'):
                     a_tag.decompose()
 
-                body = post_row.get_text('\n',strip=True)
+                body = post_row_content.get_text('\n',strip=True)
                 body_id = node_controls.get_text(strip=True).replace("#", "")
+                body_reply_to = reply_to.get_text('\n',strip=True)
 
                 if body_id:  # Check if 'id' is not None
                     last_id = get_last_id()
 
                     if last_id is not None and body_id > last_id:
                         logging.info(f"Entro con el {body_id}")
-                        save_body_and_id(body, body_id, hrefs)
+                        save_body_and_id(body, body_id, hrefs, body_reply_to)
                         save_last_id(body_id)
                         logging.info(f'Nuevo ID encontrado y guardado: {body_id}')
 
