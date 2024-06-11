@@ -9,7 +9,7 @@ on:
     branches:
       - master
   schedule:
-    - cron: '*/10 9-11 * * *'  # De 09:00 a 11:59 cada 10 minutos
+    - cron: '*/15 9-11 * * *'  # De 09:00 a 11:59 cada 10 minutos
     - cron: '0 0-8 * * *'      # De 00:00 a 08:59 cada hora
 
 # Define the sequence of jobs to run in this workflow
