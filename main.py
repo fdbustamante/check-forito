@@ -15,8 +15,8 @@ BBCODE_CONTAINER_CLASS = 'bbcode_container'
 NODE_CONTROLS_LINK_CLASS = 'postcounter'
 LAST_ID_FILE = 'last_id.txt'
 BODY_ID_FILE = 'body_and_id.txt'
-TELEGRAM_API_URL = 'https://api.telegram.org/bot2005673798:AAGYJB0hLA0S67fwgbxqq-2FjSVhu2MSknE/sendMessage'
-CHAT_ID = '387808312'
+TELEGRAM_API_URL = 'https://api.telegram.org/bot7269598452:AAGMURWCaSd5nhDzFhEKPKl4wlY70dFEbEw/sendMessage'
+CHAT_ID = '7269598452'
 
 def get_last_id():
     try:
