@@ -34,6 +34,10 @@ jobs:
     - name: Run script
       run: |
         python main.py  # Reemplaza 'script.py' con el nombre de tu script
+      env:
+        API_TOKEN: ${{ secrets.API_TOKEN }}
+        CHAT_ID: ${{ secrets.CHAT_ID }}
+  
     - name: Commit changes
       run: |
         git config --global user.name 'fdbustamante'

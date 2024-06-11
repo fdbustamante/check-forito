@@ -1,10 +1,19 @@
 import requests
 from bs4 import BeautifulSoup
 import logging
+import os
 from urllib.parse import urljoin  # Importar urljoin para manipular URLs
 
 # Configurar el logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+API_TOKEN = os.environ.get('API_TOKEN')
+CHAT_ID = os.environ.get('CHAT_ID')
+
+if not API_TOKEN:
+    raise ValueError("API_TOKEN is not set. Please ensure it's available in the environment variables.")
+if not CHAT_ID:
+    raise ValueError("CHAT_ID is not set. Please ensure it's available in the environment variables.")
 
 URL_BASE = "https://foros.3dgames.com.ar/"
 URL = 'https://foros.3dgames.com.ar/threads/942062-ofertas-online-argentina/page544200000'
@@ -15,8 +24,7 @@ BBCODE_CONTAINER_CLASS = 'bbcode_container'
 NODE_CONTROLS_LINK_CLASS = 'postcounter'
 LAST_ID_FILE = 'last_id.txt'
 BODY_ID_FILE = 'body_and_id.txt'
-TELEGRAM_API_URL = 'https://api.telegram.org/bot7269598452:AAGMURWCaSd5nhDzFhEKPKl4wlY70dFEbEw/sendMessage'
-CHAT_ID = '387808312'
+TELEGRAM_API_URL = f'https://api.telegram.org/bot{API_TOKEN}/sendMessage'
 
 def get_last_id():
     try:
