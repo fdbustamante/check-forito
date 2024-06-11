@@ -73,7 +73,7 @@ def fetch_data():
 
             if post_row_content and node_controls:
                 bbcode_containers = post_row_content.find_all(class_=BBCODE_CONTAINER_CLASS)
-                body_reply_to = "\n\n".join(bbcode.get_text('\n\n',strip=True) for bbcode in bbcode_containers)
+                body_reply_to = "\n\n".join(bbcode.get_text('\n',strip=True) for bbcode in bbcode_containers)
 
                 # Eliminar bbcode_container
                 for bbcode in post_row_content.find_all(class_=BBCODE_CONTAINER_CLASS):
@@ -90,7 +90,7 @@ def fetch_data():
                 for a_tag in post_row_content.find_all('a'):
                     a_tag.decompose()
 
-                body = post_row_content.get_text('\n\n',strip=True)
+                body = post_row_content.get_text('\n',strip=True)
                 body_id = node_controls.get_text(strip=True).replace("#", "")
 
                 if body_id:  # Check if 'id' is not None
