@@ -35,8 +35,8 @@ jobs:
         python main.py  # Reemplaza 'script.py' con el nombre de tu script
     - name: Commit changes
       run: |
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git config --global user.name 'fdbustamante'
+        git config --global user.email 'federicobustamante@gmail.com'
         git add last_id.txt
         git commit -m "Update last_id.txt with new value"
         git push
