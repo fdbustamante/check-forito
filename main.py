@@ -46,7 +46,7 @@ def send_telegram_message(chat_id, text, parse_mode='Markdown'):
         logging.error(f'Error al enviar mensaje a Telegram: {e}')
 
 def save_body_and_id(body, id, hrefs):
-    message = "_ID: " + id + "_\n\n" + body + "\n\n"
+    message = "_ID: " + id + "_\n\n`" + body + "`\n\n"
     if hrefs:
         message += "Links:\n" + "\n\n".join(hrefs)
     # with open(BODY_ID_FILE, 'a') as file:
