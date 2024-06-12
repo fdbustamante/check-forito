@@ -58,7 +58,7 @@ def fetch_data():
     try:
         response = requests.get(URL)
         response.raise_for_status()
-        logging.info('Solicitud realizada exitosamente a la URL.')
+        logging.info('Solicitud realizada exitosamente a la URL!')
 
         soup = BeautifulSoup(response.text, 'html.parser')
         post_containers = soup.find_all(class_=POST_CONTAINER_CLASS)
