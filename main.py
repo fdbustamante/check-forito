@@ -113,7 +113,7 @@ def fetch_data():
                 hrefs = [link.get('href') for link in links]
 
                 images = post_row_content.find_all('img')
-                images_to_send = [image.get('src') for image in images if 'imgur' not in image.get('src', '')]
+                images_to_send = [image.get('src') for image in images if 'imgur' not in image.get('src', '') and not image.get('src', '').endswith('.gif')]
                 logging.info(f'IMAGES {images_to_send}')
 
                 # Obtener todos los hrefs dentro de node_controls

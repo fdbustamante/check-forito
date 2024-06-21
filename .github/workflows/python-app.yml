@@ -42,7 +42,7 @@ jobs:
         git config --global user.name 'fdbustamante'
         git config --global user.email 'federicobustamante@gmail.com'
         if [ -n "$(git status --porcelain)" ]; then
-          git add last_id.txt
+          git add .
           git commit -m "Update last_id.txt with new value"
           git push
         else
