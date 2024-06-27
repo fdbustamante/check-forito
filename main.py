@@ -59,7 +59,13 @@ def download_images(urls):
     logging.info(f"Fotos a descargar {urls}")
     photos = []
     for url in urls:
-        response = requests.get(url)
+        headers = {}
+        if "imgur" in url:
+            headers = {
+                "user-agent": "curl/8.1.1",
+                "accept": "*/*"
+            }
+        response = requests.get(url, headers = headers)
         logging.info(f"Fotos a descargar {response}")
         if response.status_code == 200:
             logging.info("Foto descargada")
@@ -113,7 +119,7 @@ def fetch_data():
                 hrefs = [link.get('href') for link in links]
 
                 images = post_row_content.find_all('img')
-                images_to_send = [image.get('src') for image in images if 'imgur' not in image.get('src', '') and not image.get('src', '').endswith('.gif')]
+                images_to_send = [image.get('src') for image in images if not image.get('src', '').endswith('.gif')]
                 logging.info(f'IMAGES {images_to_send}')
 
                 # Obtener todos los hrefs dentro de node_controls
