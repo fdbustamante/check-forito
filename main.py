@@ -46,11 +46,11 @@ def send_telegram_message(chat_id, text, parse_mode='HTML'):
         logging.error(f'Error al enviar mensaje a Telegram: {e}')
 
 def save_body_and_id(body, id, hrefs, reply_to):
-    message = "<b>ID: " + id + "</b>\n\n"
-    if reply_to:
-        message += "<code>" + reply_to + "</code>\n\n\n"
+    message = ""
     if body:
         message += body + "\n\n"
+    if reply_to:
+        message += "<code>" + reply_to + "</code>\n\n\n"
     if hrefs:
         message += "Links:\n" + "\n\n".join(hrefs)
     send_telegram_message(CHAT_ID, message)
