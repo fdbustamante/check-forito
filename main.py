@@ -123,8 +123,8 @@ def fetch_data():
                 logging.info(f'IMAGES {images_to_send}')
 
                 # Obtener todos los hrefs dentro de node_controls
-                node_links = node_controls.find_all(class_=NODE_CONTROLS_LINK_CLASS)
-                hrefs.extend(urljoin(URL_BASE, link.get('href')) for link in node_links)
+                #node_links = node_controls.find_all(class_=NODE_CONTROLS_LINK_CLASS)
+                #hrefs.extend(urljoin(URL_BASE, link.get('href')) for link in node_links)
 
                 # Eliminar todos los tags <a>
                 for a_tag in post_row_content.find_all('a'):
