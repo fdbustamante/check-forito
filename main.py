@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import logging
 import os
 import json
-from urllib.parse import urljoin  # Importar urljoin para manipular URLs
+from urllib.parse import urljoin, urlparse  # Importar urljoin para manipular URLs
 from config import API_TOKEN, CHAT_ID
 
 # Configurar el logging
@@ -52,7 +52,12 @@ def save_body_and_id(body, id, hrefs, reply_to):
     if reply_to:
         message += "<code>" + reply_to + "</code>\n\n\n"
     if hrefs:
-        message += "Links:\n" + "\n\n".join(hrefs)
+        message += "Links:\n"
+        for link in hrefs:
+            # Extraer el dominio del enlace
+            domain = urlparse(link).netloc
+            # Construir la etiqueta HTML
+            message += f'<a href="{link}">{domain}</a>\n'
     send_telegram_message(CHAT_ID, message)
 
 def download_images(urls):
