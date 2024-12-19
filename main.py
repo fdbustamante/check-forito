@@ -50,7 +50,7 @@ def save_body_and_id(body, id, hrefs, reply_to):
     if body:
         message += body + "\n\n"
     if reply_to:
-        message += "<span class='tg-spoiler'>Mensaje original</span>, <tg-spoiler>" + reply_to + "</tg-spoiler>\n\n\n"
+        message += "<code>" + reply_to + "</code>\n\n\n"
     if hrefs:
         message += "Links:\n" + "\n\n".join(hrefs)
     send_telegram_message(CHAT_ID, message)
