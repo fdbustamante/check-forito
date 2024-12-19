@@ -39,7 +39,7 @@ def save_last_id(id):
 
 def send_telegram_message(chat_id, text, parse_mode='HTML'):
     try:
-        response = requests.post(TELEGRAM_API_URL, data={'chat_id': chat_id, 'text': text, 'parse_mode': parse_mode})
+        response = requests.post(TELEGRAM_API_URL, data={'chat_id': chat_id, 'text': text, 'parse_mode': parse_mode, 'disable_web_page_preview': True})
         response.raise_for_status()
         logging.info('Mensaje enviado a Telegram')
     except requests.exceptions.RequestException as e:
