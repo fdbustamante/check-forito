@@ -1,5 +1,17 @@
 import html
+import unicodedata
 from urllib.parse import urlparse
+
+from constants import HIGHLIGHT_KEYWORDS, HIGHLIGHT_PREFIX
+
+
+def _normalize(text):
+    return ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn').lower()
+
+
+def _has_highlight(post):
+    text = _normalize(f'{post.body}\n{post.reply_to}')
+    return any(k in text for k in HIGHLIGHT_KEYWORDS)
 
 
 def _render_links(urls, label=''):
@@ -25,6 +37,8 @@ def build_message(post):
     header = f'<b>Post #{post.post_id}</b>'
     if post.url:
         header += f' — <a href="{html.escape(post.url, quote=True)}">ver en el foro</a>'
+    if _has_highlight(post):
+        header = HIGHLIGHT_PREFIX + header
     parts = [header]
     if post.reply_to or post.reply_images:
         parts.append(_render_quote(post))

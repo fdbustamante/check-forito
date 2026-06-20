@@ -18,3 +18,6 @@ STATE_FILE = 'state.json'
 TELEGRAM_API = 'https://api.telegram.org'
 TELEGRAM_MESSAGE_LIMIT = 4096
 REQUEST_TIMEOUT = 15
+
+HIGHLIGHT_KEYWORDS = ('cupon', 'descuento', 'promo')
+HIGHLIGHT_PREFIX = '\U0001F680 '
