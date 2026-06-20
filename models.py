@@ -10,5 +10,4 @@ class Post:
     page: int = 0
     hrefs: list = field(default_factory=list)
     images: list = field(default_factory=list)
-    reply_hrefs: list = field(default_factory=list)
     reply_images: list = field(default_factory=list)

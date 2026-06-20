@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 
 from constants import (
     BBCODE_CONTAINER_CLASS,
+    BBCODE_QUOTE_MESSAGE_CLASS,
     LAST_PAGE_PROBE,
     NODE_CONTROLS_CLASS,
     NODE_CONTROLS_LINK_CLASS,
@@ -91,13 +92,15 @@ def _parse_container(container):
     post_url = urljoin(URL_BASE, post_link.get('href')) if post_link and post_link.get('href') else ''
 
     bbcodes = content.find_all(class_=BBCODE_CONTAINER_CLASS)
-    reply_to = "\n\n".join(b.get_text('\n', strip=True) for b in bbcodes)
-    reply_hrefs = []
+    quote_msgs = [b.find(class_=BBCODE_QUOTE_MESSAGE_CLASS) or b for b in bbcodes]
+    for m in quote_msgs:
+        for a in m.find_all('a'):
+            if a.get('href'):
+                a.string = a['href']
+    reply_to = "\n\n".join(m.get_text('\n', strip=True) for m in quote_msgs)
     reply_images = []
-    for b in bbcodes:
-        reply_hrefs.extend(_extract_hrefs(b))
-        reply_images.extend(_extract_images(b))
-    reply_hrefs = list(dict.fromkeys(reply_hrefs))
+    for m in quote_msgs:
+        reply_images.extend(_extract_images(m))
     reply_images = list(dict.fromkeys(reply_images))
     for b in bbcodes:
         b.decompose()
@@ -112,7 +115,7 @@ def _parse_container(container):
 
     return Post(post_id=post_id, body=body, reply_to=reply_to,
                 url=post_url, hrefs=hrefs, images=images,
-                reply_hrefs=reply_hrefs, reply_images=reply_images)
+                reply_images=reply_images)
 
 
 def parse_posts(soup):
