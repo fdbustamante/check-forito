@@ -1,17 +1,20 @@
 name: Run Python script capo
 
-# Trigger this workflow on push or pull request to the main branch
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
-  pull_request:
-    branches:
-      - master
   schedule:
-    - cron: '*/3 * * * *'
+    - cron: '*/20 * * * *'
 
-# Define the sequence of jobs to run in this workflow
+permissions:
+  contents: write
+
+concurrency:
+  group: check-forito
+  cancel-in-progress: false
+
 jobs:
   run-script:
     runs-on: ubuntu-latest
@@ -24,7 +27,8 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
-        python-version: '3.8'
+        python-version: '3.12'
+        cache: 'pip'
 
     - name: Install dependencies
       run: |
@@ -37,17 +41,15 @@ jobs:
         API_TOKEN: ${{ secrets.API_TOKEN }}
         CHAT_ID: ${{ secrets.CHAT_ID }}
         PYTHONUNBUFFERED: "1"
-  
+
     - name: Commit changes
       run: |
         git config --global user.name 'fdbustamante'
         git config --global user.email 'federicobustamante@gmail.com'
-        if [ -n "$(git status --porcelain)" ]; then
-          git add .
-          git commit -m "Update last_id.txt with new value"
+        if [ -n "$(git status --porcelain state.json)" ]; then
+          git add state.json
+          git commit -m "Update state.json with new value"
           git push
         else
           echo "No changes to commit"
         fi
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
