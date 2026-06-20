@@ -10,8 +10,9 @@ NODE_CONTROLS_LINK_CLASS = 'postcounter'
 BBCODE_CONTAINER_CLASS = 'bbcode_container'
 PAGINATION_TOP_ID = 'pagination_top'
 PAGINATION_SELECTED_CLASS = 'selected'
+PAGINATION_NEXT_REL = 'next'
 
-LAST_ID_FILE = 'last_id.txt'
+STATE_FILE = 'state.json'
 
 TELEGRAM_API = 'https://api.telegram.org'
 TELEGRAM_MESSAGE_LIMIT = 4096

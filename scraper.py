@@ -10,6 +10,7 @@ from constants import (
     LAST_PAGE_PROBE,
     NODE_CONTROLS_CLASS,
     NODE_CONTROLS_LINK_CLASS,
+    PAGINATION_NEXT_REL,
     PAGINATION_SELECTED_CLASS,
     PAGINATION_TOP_ID,
     POST_CONTAINER_CLASS,
@@ -123,32 +124,45 @@ def parse_posts(soup):
     return posts
 
 
-def collect_new_posts(last_id):
-    response = fetch_page(page_url(LAST_PAGE_PROBE))
+def has_next_page(soup, current_page):
+    pagination = soup.find(id=PAGINATION_TOP_ID)
+    if not pagination:
+        return False
+    if pagination.find('a', attrs={'rel': PAGINATION_NEXT_REL}):
+        return True
+    for a in pagination.find_all('a'):
+        match = PAGE_RE.search(a.get('href', ''))
+        if match and int(match.group(1)) > current_page:
+            return True
+    return False
+
+
+def _load_page(url):
+    response = fetch_page(url)
     soup = BeautifulSoup(response.text, 'html.parser')
     current_page = extract_current_page(soup, response.url)
-    logging.info('Ultima pagina detectada: %s', current_page)
+    posts = parse_posts(soup)
+    for p in posts:
+        p.page = current_page
+    return soup, current_page, posts
 
-    collected = []
-    while True:
-        posts = parse_posts(soup)
+
+def collect_new_posts(state):
+    last_id = state.get('last_id')
+    last_page = state.get('last_page')
+
+    start_url = page_url(last_page) if last_page else page_url(LAST_PAGE_PROBE)
+    soup, current_page, posts = _load_page(start_url)
+    logging.info('Pagina inicial %s, posts=%s', current_page, len(posts))
+
+    if last_id is None:
+        return posts
+
+    collected = [p for p in posts if p.post_id > last_id]
+    while has_next_page(soup, current_page):
+        soup, current_page, posts = _load_page(page_url(current_page + 1))
         logging.info('Pagina %s, posts=%s', current_page, len(posts))
-        if not posts:
-            break
-
-        if last_id is None:
-            collected.extend(posts)
-            break
-
         collected.extend(p for p in posts if p.post_id > last_id)
-
-        min_id = min(p.post_id for p in posts)
-        if min_id <= last_id or current_page <= 1:
-            break
-
-        current_page -= 1
-        response = fetch_page(page_url(current_page))
-        soup = BeautifulSoup(response.text, 'html.parser')
 
     collected.sort(key=lambda p: p.post_id)
     return collected

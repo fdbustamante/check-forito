@@ -4,7 +4,7 @@ import requests
 
 from formatter import build_message
 from scraper import collect_new_posts
-from storage import get_last_id, save_last_id
+from storage import load_state, save_state
 from telegram_client import download_image, send_media_group, send_telegram_message
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -23,11 +23,11 @@ def publish(post):
 
 
 def main():
-    last_id = get_last_id()
-    logging.info('last_id inicial: %s', last_id)
+    state = load_state()
+    logging.info('estado inicial: %s', state)
 
     try:
-        posts = collect_new_posts(last_id)
+        posts = collect_new_posts(state)
     except requests.RequestException as e:
         logging.error('Error al obtener el thread: %s', e)
         return
@@ -36,10 +36,11 @@ def main():
         logging.info('Sin posts nuevos')
         return
 
-    if last_id is None:
-        max_id = max(p.post_id for p in posts)
-        save_last_id(max_id)
-        logging.info('Primera corrida, guardado last_id=%s sin publicar', max_id)
+    if state['last_id'] is None:
+        latest = max(posts, key=lambda p: p.post_id)
+        save_state(latest.post_id, latest.page)
+        logging.info('Primera corrida, guardado last_id=%s last_page=%s sin publicar',
+                     latest.post_id, latest.page)
         return
 
     logging.info('Posts nuevos a publicar: %s', len(posts))
@@ -47,8 +48,8 @@ def main():
         if not publish(post):
             logging.error('Fallo al publicar post %s; se reintentara en la proxima corrida', post.post_id)
             return
-        save_last_id(post.post_id)
-        logging.info('Publicado y guardado ID %s', post.post_id)
+        save_state(post.post_id, post.page)
+        logging.info('Publicado y guardado ID %s pagina %s', post.post_id, post.page)
 
 
 if __name__ == '__main__':
