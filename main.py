@@ -15,7 +15,7 @@ if not CHAT_ID:
     raise ValueError("CHAT_ID is not set. Please ensure it's available in the environment variables.")
 
 URL_BASE = "https://foros.3dgames.com.ar/"
-URL = 'https://foros.3dgames.com.ar/threads/1111950-ofertas-online-argentina-2-0/page50000000'
+URL = 'https://foros.3dgames.com.ar/threads/1111950-ofertas-online-argentina-2-0/page500000'
 POST_CONTAINER_CLASS = 'postcontainer'
 POST_ROW_CLASS = 'postrow'
 POST_ROW_CLASS_CONTENT = 'content'
