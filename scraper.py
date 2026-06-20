@@ -1,3 +1,4 @@
+import logging
 import re
 from urllib.parse import urljoin
 
@@ -9,6 +10,8 @@ from constants import (
     LAST_PAGE_PROBE,
     NODE_CONTROLS_CLASS,
     NODE_CONTROLS_LINK_CLASS,
+    PAGINATION_SELECTED_CLASS,
+    PAGINATION_TOP_ID,
     POST_CONTAINER_CLASS,
     POST_ROW_CLASS,
     POST_ROW_CLASS_CONTENT,
@@ -36,6 +39,17 @@ def fetch_page(url):
 def extract_page_number(url):
     match = PAGE_RE.search(url)
     return int(match.group(1)) if match else 1
+
+
+def extract_current_page(soup, fallback_url):
+    pagination = soup.find(id=PAGINATION_TOP_ID)
+    if pagination:
+        selected = pagination.find(class_=PAGINATION_SELECTED_CLASS)
+        if selected:
+            text = selected.get_text(strip=True)
+            if text.isdigit():
+                return int(text)
+    return extract_page_number(fallback_url)
 
 
 def _extract_hrefs(node):
@@ -111,12 +125,14 @@ def parse_posts(soup):
 
 def collect_new_posts(last_id):
     response = fetch_page(page_url(LAST_PAGE_PROBE))
-    current_page = extract_page_number(response.url)
     soup = BeautifulSoup(response.text, 'html.parser')
+    current_page = extract_current_page(soup, response.url)
+    logging.info('Ultima pagina detectada: %s', current_page)
 
     collected = []
     while True:
         posts = parse_posts(soup)
+        logging.info('Pagina %s, posts=%s', current_page, len(posts))
         if not posts:
             break
 

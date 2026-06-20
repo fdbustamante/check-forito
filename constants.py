@@ -8,6 +8,8 @@ POST_ROW_CLASS_CONTENT = 'content'
 NODE_CONTROLS_CLASS = 'nodecontrols'
 NODE_CONTROLS_LINK_CLASS = 'postcounter'
 BBCODE_CONTAINER_CLASS = 'bbcode_container'
+PAGINATION_TOP_ID = 'pagination_top'
+PAGINATION_SELECTED_CLASS = 'selected'
 
 LAST_ID_FILE = 'last_id.txt'
 

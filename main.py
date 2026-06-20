@@ -11,6 +11,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 
 def publish(post):
+    logging.info('Publicando post %s (imgs=%s)', post.post_id, len(post.images))
     if post.images:
         downloaded = [d for d in (download_image(u) for u in post.images) if d]
         if not send_media_group(downloaded, post.post_id):
@@ -41,6 +42,7 @@ def main():
         logging.info('Primera corrida, guardado last_id=%s sin publicar', max_id)
         return
 
+    logging.info('Posts nuevos a publicar: %s', len(posts))
     for post in posts:
         if not publish(post):
             logging.error('Fallo al publicar post %s; se reintentara en la proxima corrida', post.post_id)
