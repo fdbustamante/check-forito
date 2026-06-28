@@ -1,6 +1,5 @@
 import json
 import logging
-import time
 
 import requests
 
@@ -38,35 +37,21 @@ def _response_body(e):
     return ''
 
 
-def _retry_after(e):
-    if hasattr(e, 'response') and e.response is not None and e.response.status_code == 429:
-        try:
-            return e.response.json().get('parameters', {}).get('retry_after', 30)
-        except Exception:
-            return 30
-    return None
+def _is_rate_limited(e):
+    return hasattr(e, 'response') and e.response is not None and e.response.status_code == 429
 
 
-def _post_with_retry(url, max_retries=3, **kwargs):
-    for attempt in range(max_retries + 1):
-        try:
-            response = session.post(url, timeout=REQUEST_TIMEOUT, **kwargs)
-            response.raise_for_status()
-            return response
-        except requests.RequestException as e:
-            wait = _retry_after(e)
-            if wait is not None and attempt < max_retries:
-                logging.warning('Rate limit: esperando %ss (intento %s/%s)', wait, attempt + 1, max_retries)
-                time.sleep(wait + 1)
-            else:
-                raise
+def _post(url, **kwargs):
+    response = session.post(url, timeout=REQUEST_TIMEOUT, **kwargs)
+    response.raise_for_status()
+    return response
 
 
 def send_telegram_message(text, parse_mode='HTML'):
     url = f'{TELEGRAM_API}/bot{API_TOKEN}/sendMessage'
     for chunk in chunk_text(text):
         try:
-            _post_with_retry(url, data={
+            _post(url, data={
                 'chat_id': CHAT_ID,
                 'text': chunk,
                 'parse_mode': parse_mode,
@@ -105,7 +90,7 @@ def _send_with_retry(images, post_id):
         if i == 0:
             entry['caption'] = f'Post #{post_id}'
         payload.append(entry)
-    _post_with_retry(url, files=files, data={
+    _post(url, files=files, data={
         'chat_id': CHAT_ID,
         'media': json.dumps(payload),
     })
@@ -128,7 +113,10 @@ def send_media_group(images, post_id):
             _send_with_retry([content], post_id)
             good.append(content)
         except requests.RequestException as e:
-            logging.warning('Imagen %s/%s descartada: %s', i + 1, len(images), _response_body(e))
+            if _is_rate_limited(e):
+                logging.error('Rate limit al enviar imagenes para post %s: %s', post_id, _response_body(e))
+                return False
+            logging.warning('Imagen %s/%s descartada (IMAGE_PROCESS_FAILED): %s', i + 1, len(images), _response_body(e))
 
     if not good:
         logging.error('Ninguna imagen pudo enviarse para post %s', post_id)
