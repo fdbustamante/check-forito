@@ -32,17 +32,46 @@ def chunk_text(text, limit=TELEGRAM_MESSAGE_LIMIT):
         yield text[i:i + limit]
 
 
+def _response_body(e):
+    if hasattr(e, 'response') and e.response is not None:
+        return e.response.text
+    return ''
+
+
+def _retry_after(e):
+    if hasattr(e, 'response') and e.response is not None and e.response.status_code == 429:
+        try:
+            return e.response.json().get('parameters', {}).get('retry_after', 30)
+        except Exception:
+            return 30
+    return None
+
+
+def _post_with_retry(url, max_retries=3, **kwargs):
+    for attempt in range(max_retries + 1):
+        try:
+            response = session.post(url, timeout=REQUEST_TIMEOUT, **kwargs)
+            response.raise_for_status()
+            return response
+        except requests.RequestException as e:
+            wait = _retry_after(e)
+            if wait is not None and attempt < max_retries:
+                logging.warning('Rate limit: esperando %ss (intento %s/%s)', wait, attempt + 1, max_retries)
+                time.sleep(wait + 1)
+            else:
+                raise
+
+
 def send_telegram_message(text, parse_mode='HTML'):
     url = f'{TELEGRAM_API}/bot{API_TOKEN}/sendMessage'
     for chunk in chunk_text(text):
         try:
-            response = session.post(url, data={
+            _post_with_retry(url, data={
                 'chat_id': CHAT_ID,
                 'text': chunk,
                 'parse_mode': parse_mode,
                 'disable_web_page_preview': True,
-            }, timeout=REQUEST_TIMEOUT)
-            response.raise_for_status()
+            })
             logging.info('Mensaje enviado a Telegram')
         except requests.RequestException as e:
             logging.error('Error al enviar mensaje a Telegram: %s', e)
@@ -62,23 +91,9 @@ def download_image(url):
     return None
 
 
-def _response_body(e):
-    if hasattr(e, 'response') and e.response is not None:
-        return e.response.text
-    return ''
 
 
-def _retry_after(e):
-    """Return retry_after seconds from a 429 response, or None."""
-    if hasattr(e, 'response') and e.response is not None and e.response.status_code == 429:
-        try:
-            return e.response.json().get('parameters', {}).get('retry_after', 30)
-        except Exception:
-            return 30
-    return None
-
-
-def _send_media_group_request(images, post_id):
+def _send_with_retry(images, post_id):
     url = f'{TELEGRAM_API}/bot{API_TOKEN}/sendMediaGroup'
     files = {}
     payload = []
@@ -90,26 +105,10 @@ def _send_media_group_request(images, post_id):
         if i == 0:
             entry['caption'] = f'Post #{post_id}'
         payload.append(entry)
-    response = session.post(url, files=files, data={
+    _post_with_retry(url, files=files, data={
         'chat_id': CHAT_ID,
         'media': json.dumps(payload),
-    }, timeout=REQUEST_TIMEOUT)
-    response.raise_for_status()
-
-
-def _send_with_retry(images, post_id):
-    """Send a media group, waiting on 429 and raising on other errors."""
-    while True:
-        try:
-            _send_media_group_request(images, post_id)
-            return True
-        except requests.RequestException as e:
-            wait = _retry_after(e)
-            if wait is not None:
-                logging.warning('Rate limit: esperando %ss antes de reintentar', wait)
-                time.sleep(wait + 1)
-            else:
-                raise
+    })
 
 
 def send_media_group(images, post_id):
