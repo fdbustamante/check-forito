@@ -85,4 +85,6 @@ def send_media_group(images, post_id):
         return True
     except requests.RequestException as e:
         logging.error('Error al enviar imagenes a Telegram: %s', e)
+        if hasattr(e, 'response') and e.response is not None:
+            logging.error('Telegram response: %s', e.response.text)
         return False
