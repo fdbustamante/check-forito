@@ -61,9 +61,7 @@ def download_image(url):
     return None
 
 
-def send_media_group(images, post_id):
-    if not images:
-        return True
+def _send_media_group_request(images, post_id):
     url = f'{TELEGRAM_API}/bot{API_TOKEN}/sendMediaGroup'
     files = {}
     payload = []
@@ -75,16 +73,47 @@ def send_media_group(images, post_id):
         if i == 0:
             entry['caption'] = f'Post #{post_id}'
         payload.append(entry)
+    response = session.post(url, files=files, data={
+        'chat_id': CHAT_ID,
+        'media': json.dumps(payload),
+    }, timeout=REQUEST_TIMEOUT)
+    response.raise_for_status()
+
+
+def send_media_group(images, post_id):
+    if not images:
+        return True
     try:
-        response = session.post(url, files=files, data={
-            'chat_id': CHAT_ID,
-            'media': json.dumps(payload),
-        }, timeout=REQUEST_TIMEOUT)
-        response.raise_for_status()
+        _send_media_group_request(images, post_id)
         logging.info('Imagenes enviadas a Telegram')
         return True
     except requests.RequestException as e:
+        body = e.response.text if hasattr(e, 'response') and e.response is not None else ''
+        logging.warning('sendMediaGroup fallo (%s), reintentando sin imagenes problematicas. %s', e, body)
+
+    # Retry sending images one by one, skipping those that fail
+    good = []
+    for i, content in enumerate(images):
+        try:
+            _send_media_group_request([content], post_id)
+            good.append(content)
+        except requests.RequestException as e:
+            body = e.response.text if hasattr(e, 'response') and e.response is not None else ''
+            logging.warning('Imagen %s/%s descartada (no procesable por Telegram): %s', i + 1, len(images), body)
+
+    if not good:
+        logging.error('Ninguna imagen pudo enviarse para post %s', post_id)
+        return False
+
+    if len(good) == 1:
+        logging.info('1 imagen enviada para post %s', post_id)
+        return True
+
+    # Send all good images together
+    try:
+        _send_media_group_request(good, post_id)
+        logging.info('%s imagenes enviadas a Telegram', len(good))
+        return True
+    except requests.RequestException as e:
         logging.error('Error al enviar imagenes a Telegram: %s', e)
-        if hasattr(e, 'response') and e.response is not None:
-            logging.error('Telegram response: %s', e.response.text)
         return False
