@@ -8,6 +8,23 @@ from constants import REQUEST_TIMEOUT, TELEGRAM_API, TELEGRAM_MESSAGE_LIMIT
 
 session = requests.Session()
 
+_IMAGE_SIGNATURES = [
+    (b'\x89PNG\r\n\x1a\n', 'image/png', 'png'),
+    (b'GIF87a', 'image/gif', 'gif'),
+    (b'GIF89a', 'image/gif', 'gif'),
+    (b'RIFF', 'image/webp', 'webp'),
+    (b'\xff\xd8\xff', 'image/jpeg', 'jpg'),
+]
+
+
+def _detect_image_type(content):
+    for sig, mime, ext in _IMAGE_SIGNATURES:
+        if content[:len(sig)].startswith(sig[:4] if ext == 'webp' else sig):
+            if ext == 'webp' and len(content) > 8 and content[8:12] != b'WEBP':
+                continue
+            return mime, ext
+    return 'image/jpeg', 'jpg'
+
 
 def chunk_text(text, limit=TELEGRAM_MESSAGE_LIMIT):
     for i in range(0, len(text), limit):
@@ -52,12 +69,12 @@ def send_media_group(images, post_id):
     payload = []
     for i, content in enumerate(images):
         file_id = f'photo{i}'
-        files[file_id] = ('image.jpg', content)
-        payload.append({
-            'type': 'photo',
-            'caption': f'Post #{post_id} — imagen {i + 1}/{len(images)}',
-            'media': f'attach://{file_id}',
-        })
+        mime, ext = _detect_image_type(content)
+        files[file_id] = (f'image.{ext}', content, mime)
+        entry = {'type': 'photo', 'media': f'attach://{file_id}'}
+        if i == 0:
+            entry['caption'] = f'Post #{post_id}'
+        payload.append(entry)
     try:
         response = session.post(url, files=files, data={
             'chat_id': CHAT_ID,
