@@ -46,10 +46,10 @@ def main():
     logging.info('Posts nuevos a publicar: %s', len(posts))
     for post in posts:
         if not publish(post):
-            logging.error('Fallo al publicar post %s; se reintentara en la proxima corrida', post.post_id)
-            return
-        save_state(post.post_id, post.page)
-        logging.info('Publicado y guardado ID %s pagina %s', post.post_id, post.page)
+            logging.warning('Fallo al publicar post %s; continuando con los siguientes', post.post_id)
+        else:
+            save_state(post.post_id, post.page)
+            logging.info('Publicado y guardado ID %s pagina %s', post.post_id, post.page)
 
 
 if __name__ == '__main__':

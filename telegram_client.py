@@ -69,7 +69,11 @@ def download_image(url):
     try:
         response = session.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
         if response.status_code == 200:
-            return response.content
+            content = response.content
+            if len(content) < 50000:  # ponytail: reject suspiciously small images (thumbnails, corrupted)
+                logging.warning('Imagen descartada (too small %sB): %s', len(content), url)
+                return None
+            return content
         logging.warning('Imagen no descargada (%s): %s', response.status_code, url)
     except requests.RequestException as e:
         logging.error('Error descargando imagen %s: %s', url, e)
