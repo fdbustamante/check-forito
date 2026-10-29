@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 
 from curl_cffi.requests.exceptions import RequestException
 
@@ -38,10 +39,16 @@ def main():
         posts = collect_new_posts(state)
     except RequestException as e:
         logging.error('Error al obtener el thread: %s', e)
-        if not os.environ.get('FORUM_WORKER_URL') and not os.environ.get('FORUM_PROXY_URL'):
-            logging.error('Cloudflare bloquea las IPs de GitHub Actions. Configura el secret '
-                          'FORUM_WORKER_URL (Cloudflare Worker proxy) o usa un self-hosted runner.')
-        return
+        if os.environ.get('FORUM_WORKER_URL'):
+            hint = ('El Worker respondio con error. Verifica FORUM_WORKER_URL y que '
+                    'FORUM_WORKER_TOKEN coincida con el secret PROXY_TOKEN del Worker.')
+        elif os.environ.get('FORUM_PROXY_URL'):
+            hint = 'Verifica que el proxy FORUM_PROXY_URL siga funcionando.'
+        else:
+            hint = ('Cloudflare bloquea las IPs de GitHub Actions. Configura el secret '
+                    'FORUM_WORKER_URL (Cloudflare Worker proxy) o usa un self-hosted runner.')
+        print(f'::error::No se pudo leer el foro: {e}. {hint}', flush=True)
+        return 1
 
     if not posts:
         logging.info('Sin posts nuevos')
@@ -69,4 +76,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
