@@ -36,7 +36,7 @@ jobs:
         pip install -r requirements.txt
 
     - name: Run script
-      run: python -u diagnose.py
+      run: python -u main.py
       env:
         API_TOKEN: ${{ secrets.API_TOKEN }}
         CHAT_ID: ${{ secrets.CHAT_ID }}

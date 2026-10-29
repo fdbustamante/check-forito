@@ -39,14 +39,23 @@ def main():
         posts = collect_new_posts(state)
     except RequestException as e:
         logging.error('Error al obtener el thread: %s', e)
-        if os.environ.get('FORUM_WORKER_URL'):
-            hint = ('El Worker respondio con error. Verifica FORUM_WORKER_URL y que '
-                    'FORUM_WORKER_TOKEN coincida con el secret PROXY_TOKEN del Worker.')
+        response = getattr(e, 'response', None)
+        body = (response.text if response is not None else '') or ''
+        if 'forbidden' in body[:50].lower():
+            hint = ('El Worker rechazo el token. Verifica que FORUM_WORKER_TOKEN coincida '
+                    'con el secret PROXY_TOKEN del Worker.')
+        elif 'Attention Required' in body or 'Just a moment' in body:
+            hint = ('El foro (Cloudflare) bloqueo la IP de salida. El Worker tambien corre '
+                    'en Cloudflare y puede estar bloqueado; usa un self-hosted runner o '
+                    'configura un proxy residencial en FORUM_PROXY_URL.')
+        elif os.environ.get('FORUM_WORKER_URL'):
+            hint = ('El Worker respondio con error. Verifica FORUM_WORKER_URL y '
+                    'FORUM_WORKER_TOKEN.')
         elif os.environ.get('FORUM_PROXY_URL'):
             hint = 'Verifica que el proxy FORUM_PROXY_URL siga funcionando.'
         else:
-            hint = ('Cloudflare bloquea las IPs de GitHub Actions. Configura el secret '
-                    'FORUM_WORKER_URL (Cloudflare Worker proxy) o usa un self-hosted runner.')
+            hint = ('Cloudflare bloquea las IPs de GitHub Actions. Usa un self-hosted runner '
+                    'o configura un proxy residencial en FORUM_PROXY_URL.')
         print(f'::error::No se pudo leer el foro: {e}. {hint}', flush=True)
         return 1
 
