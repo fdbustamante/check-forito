@@ -40,6 +40,9 @@ jobs:
       env:
         API_TOKEN: ${{ secrets.API_TOKEN }}
         CHAT_ID: ${{ secrets.CHAT_ID }}
+        FORUM_WORKER_URL: ${{ secrets.FORUM_WORKER_URL }}
+        FORUM_WORKER_TOKEN: ${{ secrets.FORUM_WORKER_TOKEN }}
+        FORUM_PROXY_URL: ${{ secrets.FORUM_PROXY_URL }}
         PYTHONUNBUFFERED: "1"
 
     - name: Commit changes

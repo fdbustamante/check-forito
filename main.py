@@ -1,4 +1,5 @@
 import logging
+import os
 
 from curl_cffi.requests.exceptions import RequestException
 
@@ -26,11 +27,20 @@ def publish(post):
 def main():
     state = load_state()
     logging.info('estado inicial: %s', state)
+    if os.environ.get('FORUM_WORKER_URL'):
+        logging.info('Foro via Cloudflare Worker: %s', os.environ['FORUM_WORKER_URL'])
+    elif os.environ.get('FORUM_PROXY_URL'):
+        logging.info('Foro via proxy configurado (FORUM_PROXY_URL)')
+    else:
+        logging.info('Foro sin proxy (IP directa)')
 
     try:
         posts = collect_new_posts(state)
     except RequestException as e:
         logging.error('Error al obtener el thread: %s', e)
+        if not os.environ.get('FORUM_WORKER_URL') and not os.environ.get('FORUM_PROXY_URL'):
+            logging.error('Cloudflare bloquea las IPs de GitHub Actions. Configura el secret '
+                          'FORUM_WORKER_URL (Cloudflare Worker proxy) o usa un self-hosted runner.')
         return
 
     if not posts:

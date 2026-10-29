@@ -1,10 +1,12 @@
 import json
 import logging
+from urllib.parse import urlparse
 
 import requests
 
 from config import API_TOKEN, CHAT_ID
 from constants import REQUEST_TIMEOUT, TELEGRAM_API, TELEGRAM_MESSAGE_LIMIT
+from forum_proxy import worker_url
 
 session = requests.Session()
 
@@ -65,9 +67,12 @@ def send_telegram_message(text, parse_mode='HTML'):
 
 
 def download_image(url):
-    headers = {'user-agent': 'curl/8.1.1', 'accept': '*/*'} if 'imgur' in url else {}
+    host = (urlparse(url).hostname or '').lower()
+    is_forum = host == '3dgames.com.ar' or host.endswith('.3dgames.com.ar')
+    proxied = worker_url(url) if is_forum else None
+    headers = {'user-agent': 'curl/8.1.1', 'accept': '*/*'} if 'imgur' in url and not proxied else {}
     try:
-        response = session.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+        response = session.get(proxied or url, headers=headers, timeout=REQUEST_TIMEOUT)
         if response.status_code == 200:
             content = response.content
             if len(content) < 50000:  # ponytail: reject suspiciously small images (thumbnails, corrupted)

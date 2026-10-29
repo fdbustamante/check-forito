@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 from urllib.parse import urljoin
 
@@ -21,12 +22,17 @@ from constants import (
     THREAD_URL,
     URL_BASE,
 )
+from forum_proxy import worker_url
 from models import Post
 
 PAGE_RE = re.compile(r'/page(\d+)')
 
-# Cloudflare bloquea clients sin huella TLS de navegador; impersonate evita el 403.
-session = requests.Session(impersonate='chrome')
+# Cloudflare bloquea clients sin huella TLS de navegador; impersonate evita el 403
+# desde IPs residenciales. Las IPs de datacenter (GitHub Actions) reciben un bloqueo
+# por ASN, por eso se puede configurar un proxy via FORUM_PROXY_URL o un
+# Cloudflare Worker via FORUM_WORKER_URL.
+PROXY_URL = os.environ.get('FORUM_PROXY_URL') or None
+session = requests.Session(impersonate='chrome', proxy=PROXY_URL)
 
 
 def page_url(n):
@@ -34,7 +40,19 @@ def page_url(n):
 
 
 def fetch_page(url):
-    response = session.get(url, timeout=REQUEST_TIMEOUT)
+    request_url = worker_url(url) or url
+    response = session.get(request_url, timeout=REQUEST_TIMEOUT)
+    if response.status_code >= 400:
+        title = ''
+        match = re.search(r'<title>(.*?)</title>', response.text, re.S | re.I)
+        if match:
+            title = ' '.join(match.group(1).split())
+        logging.error('HTTP %s en %s (worker=%s, cf-mitigated=%s, server=%s, cf-ray=%s, titulo=%s)',
+                      response.status_code, url, request_url != url,
+                      response.headers.get('cf-mitigated'),
+                      response.headers.get('server'),
+                      response.headers.get('cf-ray'),
+                      title or 'n/a')
     response.raise_for_status()
     return response
 
@@ -144,7 +162,7 @@ def has_next_page(soup, current_page):
 def _load_page(url):
     response = fetch_page(url)
     soup = BeautifulSoup(response.text, 'html.parser')
-    current_page = extract_current_page(soup, response.url)
+    current_page = extract_current_page(soup, url)
     posts = parse_posts(soup)
     for p in posts:
         p.page = current_page
