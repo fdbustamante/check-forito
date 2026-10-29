@@ -21,3 +21,7 @@ REQUEST_TIMEOUT = 15
 
 HIGHLIGHT_KEYWORDS = ('cupon', 'descuento', 'promo')
 HIGHLIGHT_PREFIX = '\U0001F680 '
+
+# Tope de posts a publicar por corrida; si hubo un corte largo, se publican
+# solo los mas recientes para no exceder el timeout del workflow ni el rate limit.
+MAX_POSTS_PER_RUN = 10

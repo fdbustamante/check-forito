@@ -2,7 +2,7 @@ import logging
 import re
 from urllib.parse import urljoin
 
-import requests
+from curl_cffi import requests
 from bs4 import BeautifulSoup
 
 from constants import (
@@ -25,7 +25,8 @@ from models import Post
 
 PAGE_RE = re.compile(r'/page(\d+)')
 
-session = requests.Session()
+# Cloudflare bloquea clients sin huella TLS de navegador; impersonate evita el 403.
+session = requests.Session(impersonate='chrome')
 
 
 def page_url(n):

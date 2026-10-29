@@ -1,7 +1,8 @@
 import logging
 
-import requests
+from curl_cffi.requests.exceptions import RequestException
 
+from constants import MAX_POSTS_PER_RUN
 from formatter import build_message
 from scraper import collect_new_posts
 from storage import load_state, save_state
@@ -28,7 +29,7 @@ def main():
 
     try:
         posts = collect_new_posts(state)
-    except requests.RequestException as e:
+    except RequestException as e:
         logging.error('Error al obtener el thread: %s', e)
         return
 
@@ -42,6 +43,11 @@ def main():
         logging.info('Primera corrida, guardado last_id=%s last_page=%s sin publicar',
                      latest.post_id, latest.page)
         return
+
+    if len(posts) > MAX_POSTS_PER_RUN:
+        logging.warning('Backlog de %s posts; se omiten los mas viejos y se publican los %s recientes',
+                        len(posts), MAX_POSTS_PER_RUN)
+        posts = posts[-MAX_POSTS_PER_RUN:]
 
     logging.info('Posts nuevos a publicar: %s', len(posts))
     for post in posts:
