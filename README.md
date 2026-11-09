@@ -2,44 +2,61 @@
 
 Bot que lee el thread de ofertas de 3DGames y publica los posts nuevos en Telegram.
 
-## Por que falla en GitHub Actions
+## Situacion actual (noviembre 2026)
 
-El foro esta detras de Cloudflare y bloquea por ASN las IPs de datacenter
-(incluidos los runners de GitHub Actions). `curl_cffi` alcanza desde una IP
-residencial, pero no desde Actions. La solucion es salir por una IP que el foro
-permita: un Cloudflare Worker propio (gratis) o un proxy residencial.
+El foro esta detrás de Cloudflare y **bloquea por IP/ASN las IPs de datacenter**,
+incluidos los runners de GitHub Actions. Se probaron:
 
-## Opcion recomendada: Cloudflare Worker
+- `curl_cffi` con huella TLS de Chrome, Safari, Firefox y Edge.
+- Headers completos de navegador (`sec-ch-ua`, `sec-fetch-*`, etc.).
+- User-Agent móvil, Googlebot y el RSS del thread.
+- Un Cloudflare Worker propio (funciona desde algunas ubicaciones, pero no desde
+  los runners de EE. UU. de GitHub Actions).
+- Tapatalk (`/mobiquo/mobiquo.php`), que está detrás del mismo challenge.
 
-El Worker corre en el edge de Cloudflare y puede leer el foro; el Action le pide
-las paginas al Worker.
+Desde Actions, **todas** las variantes reciben `403 Attention Required!`, que es un
+bloqueo duro del WAF (no un challenge que se pueda resolver). Por eso la solución
+confiable es salir por una IP residencial.
 
-1. Crear una cuenta gratuita en <https://dash.cloudflare.com/>.
-2. Ir a **Workers & Pages -> Create -> Worker**, ponerle un nombre (ej.
-   `forito-proxy`) y deployar.
-3. **Edit code**, borrar el ejemplo y pegar el contenido de
-   [`cloudflare-worker.js`](cloudflare-worker.js). Deploy.
-4. En **Settings -> Variables and Secrets**, agregar un **Secret** llamado
-   `PROXY_TOKEN` con un valor largo y aleatorio.
-5. Copiar la URL publica del Worker, con forma
-   `https://forito-proxy.<subdominio>.workers.dev`.
-6. En GitHub, ir a **Settings -> Secrets and variables -> Actions** y crear:
-   - `FORUM_WORKER_URL`: la URL del Worker.
-   - `FORUM_WORKER_TOKEN`: el mismo valor de `PROXY_TOKEN`.
-7. Ejecutar el workflow (`Actions -> Run workflow`).
+## Opción recomendada: self-hosted runner
 
-El Worker solo permite pedir URLs de `3dgames.com.ar` y, si `PROXY_TOKEN` esta
-configurado, exige el token. No queda como proxy abierto.
+Usa tu PC (IP residencial) para ejecutar el workflow de GitHub Actions. Sigue
+siendo GitHub Actions, con el cron y los logs en GitHub, pero la descarga la hace
+tu conexión.
 
-### Opcion alternativa: proxy residencial
+1. En GitHub: **Settings -> Actions -> Runners -> New self-hosted runner**.
+2. Elegí **Windows x64** y seguí las instrucciones (descargar, `config.cmd`,
+   `svc.cmd install` / `svc.cmd start`).
+3. En `.github/workflows/python-app.yml`, cambiar:
+   - `runs-on: ubuntu-latest` por `runs-on: self-hosted`.
+   - Agregar `shell: bash` al step **Commit changes**.
+   - Quitar `FORUM_WORKER_URL`, `FORUM_WORKER_TOKEN` y `FORUM_PROXY_URL` del `env`
+     (con IP residencial no hacen falta).
+4. Asegurate de que la PC no se duerma (Configuración de energía -> Nunca).
+5. Ejecutar el workflow con **Run workflow**.
 
-Configurar el secret `FORUM_PROXY_URL` con un proxy HTTP/HTTPS
-(`http://usuario:clave@host:puerto`). El bot lo usa para todas las peticiones al
-foro.
+## Opción alternativa: proxy residencial
 
-### Opcion alternativa: self-hosted runner
+Si querés seguir en la nube de GitHub sin mantener una PC prendida, configurá el
+secret `FORUM_PROXY_URL` con un proxy HTTP/HTTPS residencial
+(`http://usuario:clave@host:puerto`). Quitá `FORUM_WORKER_URL` para que el bot
+vaya directo a través del proxy. Tiene costo mensual.
 
-Si tenes una PC siempre encendida con IP residencial, podes registrar un
-self-hosted runner de GitHub y cambiar `runs-on: ubuntu-latest` por
-`runs-on: self-hosted` en `.github/workflows/python-app.yml`. En ese caso no
-hace falta Worker ni proxy.
+## Cloudflare Worker (experimental)
+
+El Worker de [`cloudflare-worker.js`](cloudflare-worker.js) puede leer el foro
+desde algunos colos de Cloudflare (por ejemplo, desde Argentina funcionó), pero
+desde los runners de GitHub Actions el foro respondió `403 Attention Required!`.
+No es una solución estable para Actions; queda como alternativa si el Worker se
+ejecuta desde una ubicación permitida.
+
+Para desplegarlo: crear un Worker en el dashboard de Cloudflare, pegar el
+contenido de `cloudflare-worker.js`, agregar el secret `PROXY_TOKEN` y configurar
+`FORUM_WORKER_URL` + `FORUM_WORKER_TOKEN` en GitHub. El Worker solo permite URLs
+de `3dgames.com.ar` y exige el token si `PROXY_TOKEN` está configurado.
+
+## Estado
+
+`state.json` guarda `last_id` y `last_page`. Está en `10209` / `681` (último post
+al 9 de noviembre de 2026). `MAX_POSTS_PER_RUN` limita a 10 los posts publicados
+por corrida para no inundar Telegram.
